@@ -1,0 +1,250 @@
+/* Tailwind is imported for you — this file is the theme. */
+@theme {
+  /* Dark by default. Surfaces step up in lightness the closer they sit
+   * to the reader: ground, card, hover. Borders are one step above the
+   * card, never a separate hue. */
+  --color-bg: #0b0f17;
+  --color-surface: #111827;
+  --color-border: #1f2937;
+  --color-fg: #e5e7eb;
+  --color-muted: #9ca3af;
+  --color-faint: #6b7280;
+
+  /* Two accents: the strong one is a fill (buttons), the light one is
+   * text and links, where indigo-600 on near-black would fall below
+   * 4.5:1. */
+  --color-accent: #a5b4fc;
+  --color-accent-strong: #4f46e5;
+  --color-accent-hover: #4338ca;
+  --color-accent-soft: rgb(99 102 241 / 0.18);
+
+  --color-high: #f87171;
+  --color-high-soft: rgb(248 113 113 / 0.14);
+  --color-medium: #fbbf24;
+  --color-medium-soft: rgb(251 191 36 / 0.14);
+  --color-info: #60a5fa;
+  --color-info-soft: rgb(96 165 250 / 0.14);
+  --color-ok: #34d399;
+  --color-ok-soft: rgb(52 211 153 / 0.14);
+
+  --font-sans: "Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --font-mono: ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+}
+
+html {
+  color-scheme: dark;
+}
+
+body {
+  background: var(--color-bg);
+  color: var(--color-fg);
+  font-family: var(--font-sans);
+  font-size: 14px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+
+body[data-state="reconnecting"] {
+  opacity: 0.6;
+}
+
+/* ---- shared pieces ------------------------------------------------ */
+
+@utility card {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
+  box-shadow: 0 1px 2px rgb(0 0 0 / 0.3);
+}
+
+@utility btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0.875rem;
+  border-radius: 8px;
+  font-weight: 500;
+  font-size: 13px;
+  line-height: 1.25;
+  background: var(--color-accent-strong);
+  color: #fff;
+  transition: background 120ms ease;
+  &:hover {
+    background: var(--color-accent-hover);
+  }
+  &:disabled {
+    background: var(--color-border);
+    color: var(--color-faint);
+    cursor: default;
+  }
+}
+
+@utility btn-secondary {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0.875rem;
+  border-radius: 8px;
+  font-weight: 500;
+  font-size: 13px;
+  line-height: 1.25;
+  background: var(--color-surface);
+  color: var(--color-fg);
+  border: 1px solid var(--color-border);
+  transition: background 120ms ease;
+  &:hover {
+    background: var(--color-bg);
+  }
+  &:disabled {
+    color: var(--color-faint);
+    cursor: default;
+  }
+}
+
+@utility badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.125rem 0.5rem;
+  border-radius: 9999px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+}
+
+@utility mono {
+  font-family: var(--font-mono);
+  font-size: 12.5px;
+}
+
+/* Tables */
+@utility table-head {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--color-muted);
+}
+
+/* A blinking dot for "working". */
+@utility pulse-dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 9999px;
+  background: var(--color-accent-strong);
+  animation: pulse 1.2s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  50% {
+    opacity: 0.25;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pulse-dot {
+    animation: none;
+  }
+}
+
+/* ---- the analyst's brief: rendered markdown ----------------------- */
+
+.brief {
+  line-height: 1.6;
+}
+.brief > :first-child {
+  margin-top: 0;
+}
+.brief h1,
+.brief h2 {
+  font-size: 15px;
+  font-weight: 600;
+  margin: 1.25rem 0 0.5rem;
+  padding-bottom: 0.25rem;
+  border-bottom: 1px solid var(--color-border);
+}
+.brief h3,
+.brief h4 {
+  font-size: 14px;
+  font-weight: 600;
+  margin: 1rem 0 0.25rem;
+}
+.brief p {
+  margin: 0.5rem 0;
+}
+.brief ul,
+.brief ol {
+  margin: 0.5rem 0;
+  padding-left: 1.5rem;
+}
+.brief ul {
+  list-style: disc;
+}
+.brief ol {
+  list-style: decimal;
+}
+.brief li {
+  margin: 0.25rem 0;
+}
+.brief li > p {
+  margin: 0.125rem 0;
+}
+.brief strong {
+  font-weight: 600;
+  color: var(--color-fg);
+}
+.brief a {
+  color: var(--color-accent);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+.brief code {
+  font-family: var(--font-mono);
+  font-size: 12.5px;
+  background: var(--color-bg);
+  border: 1px solid var(--color-border);
+  border-radius: 4px;
+  padding: 0 0.3em;
+}
+.brief pre {
+  margin: 0.75rem 0;
+  padding: 0.75rem 1rem;
+  background: #020617;
+  color: #e2e8f0;
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  overflow-x: auto;
+}
+.brief pre code {
+  background: none;
+  border: 0;
+  padding: 0;
+  color: inherit;
+}
+.brief table {
+  margin: 0.75rem 0;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+.brief th,
+.brief td {
+  border: 1px solid var(--color-border);
+  padding: 0.3rem 0.6rem;
+  text-align: left;
+}
+.brief th {
+  background: var(--color-bg);
+  font-weight: 600;
+}
+.brief blockquote {
+  margin: 0.75rem 0;
+  padding-left: 0.75rem;
+  border-left: 3px solid var(--color-border);
+  color: var(--color-muted);
+}
+.brief hr {
+  margin: 1rem 0;
+  border: 0;
+  border-top: 1px solid var(--color-border);
+}

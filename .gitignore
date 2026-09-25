@@ -1,0 +1,14 @@
+.yeetkit/
+dist/
+app/.yeetkit.css
+node_modules/
+bin/*.bpf.o
+.build/
+bpf/include/vmlinux.h
+.clangd
+
+# scan history
+.bomtastic/
+
+# bundled scan worker (npm run worker)
+public/scan-worker.js

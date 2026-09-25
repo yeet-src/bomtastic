@@ -1,0 +1,30 @@
+{
+  "name": "bomtastic",
+  "version": "0.1.0",
+  "description": "A runtime bill of materials built from /proc on yeet: what is executing on a host right now, what it maps, and which of it has an open advisory.",
+  "license": "Apache-2.0",
+  "private": true,
+  "type": "module",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/yeet-src/bomtastic"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "worker": "node scripts/worker.mjs",
+    "dev": "npm run worker && yeetkit dev",
+    "build": "npm run worker && yeetkit build",
+    "start": "yeetkit start",
+    "check": "npm run worker && yeetkit build && yeetkit check"
+  },
+  "dependencies": {
+    "d3-drag": "^3.0.0",
+    "d3-force": "^3.0.0",
+    "d3-selection": "^3.0.0",
+    "d3-zoom": "^3.0.0",
+    "marked": "^18.0.13",
+    "yeetkit": "github:yeet-src/yeetkit#hub-fixes-and-services"
+  }
+}

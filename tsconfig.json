@@ -1,0 +1,22 @@
+{
+  "//": "Here for the editor, not for the build: esbuild resolves these two aliases itself (see src/cli/bundle.mjs and src/cli/bpf.mjs). Keeping them listed means go-to-definition and completion work on an `@/` import.",
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "allowJs": true,
+    "checkJs": false,
+    "noEmit": true,
+    "strict": false,
+    "jsx": "preserve",
+    "jsxImportSource": "solid-js",
+    "types": [],
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["app/*"],
+      "#/*": ["bin/*"],
+      "yeetkit": ["node_modules/yeetkit/src/runtime/index.js"]
+    }
+  },
+  "include": ["app", "bpf"]
+}
