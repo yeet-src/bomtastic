@@ -9,6 +9,9 @@
     "type": "git",
     "url": "https://github.com/yeet-src/bomtastic"
   },
+  "bin": {
+    "bomtastic": "bin/bomtastic.mjs"
+  },
   "engines": {
     "node": ">=20"
   },

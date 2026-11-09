@@ -17,7 +17,7 @@ const GATEWAY = process.env.BOM_GATEWAY ?? "127.0.0.1:3450";
 /* Where a node's own page is, by convention: every node serves it on the same port. */
 const NODE_PORT = process.env.BOM_NODE_PORT ?? "3100";
 /* The service whose gateway this is, for the list of configured upstreams. */
-const SERVICE = process.env.BOM_SERVICE ?? "bom-hub";
+const SERVICE = process.env.BOM_SERVICE ?? "bomtastic";
 const ACTION = "app/lib/analyst.js#latest";
 const TIMEOUT_MS = 20_000;
 
@@ -57,12 +57,13 @@ function callRoute(url, action, args = []) {
     let pending = "";
     const done = (fn, value) => {
       clearTimeout(timer);
+      timer = null;
       try {
         socket.close();
       } catch {}
       fn(value);
     };
-    const timer = setTimeout(() => done(reject, new Error(`timed out after ${TIMEOUT_MS / 1000}s`)), TIMEOUT_MS);
+    let timer = setTimeout(() => done(reject, new Error(`timed out after ${TIMEOUT_MS / 1000}s`)), TIMEOUT_MS);
 
     socket.addEventListener("open", () => socket.send(encodeUplink({ t: "call", cid, action, args })));
     socket.addEventListener("error", () => done(reject, new Error("could not connect")));
@@ -126,7 +127,7 @@ function verdict(inv) {
 }
 
 /* A node is known by the segment its proxy route gives it — the peer's
- * address with dots as dashes, as conf.js writes it — and that segment
+ * address with dots as dashes, as deploy.sh mounts it — and that segment
  * is the slug of its drill-down page. */
 function identify(route) {
   const m = /^\/nodes\/([^/]+)\//.exec(route.path);

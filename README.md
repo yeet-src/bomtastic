@@ -19,18 +19,41 @@
 > [!TIP]
 > **No agent to install, no inventory to ship.** The scan runs inside a yeet isolate on the host — a sandbox with no network, no filesystem and no `exec` — and asks the kernel through `yeet.graph.query`. The only host-side code beyond reading `/proc` is three named Node functions (package lookup, hashing, advisory feeds), and you can read all of them before lunch.
 
-## Quick start
+## Install
+
+Linux only, yeet 0.25+. The daemon runs as root; nothing below needs
+`sudo`. [Manual install guide](https://yeet.cx/docs/install/manual-installation)
+
+### On the hub machine
+
+The one box that serves the pages. Needs Node 20+:
 
 ```sh
-curl -fsSL https://yeet.cx | sh     # yeet 0.23+ (the daemon runs as root; nothing below needs sudo)
-yeet login                           # log the host in to yeet.cx — the analyst tab needs a model
-git clone https://github.com/yeet-src/bomtastic && cd bomtastic
-npm install                          # Node 20+; pulls yeetkit from GitHub
-npm run dev                          # http://localhost:3100
+curl -fsSL https://yeet.cx | sh
+npx -y github:yeet-src/bomtastic     # http://localhost:3100
 ```
-[Manual install guide](https://yeet.cx/docs/install/manual-installation) | Linux only
 
-The first run fetches a pinned clang/bpftool toolchain into a per-machine cache to compile `bpf/*.bpf.c`, so it needs the network once. Package ownership comes from `rpm` or `dpkg`, whichever the host has; advisories from `dnf updateinfo` on the RPM family and from [OSV](https://osv.dev) elsewhere. `yeet login` opens a browser to sign the host in; skip it and everything but the analyst tab still works.
+That fetches the release pack, applies it as the `bomtastic` service
+(the scanner isolate behind a gateway on `:3450`) and serves the pages
+from the same pack. Add `--peer <host>:3450` once per other machine to
+put it on the fleet page.
+
+### On each other machine
+
+No Node needed, only the scanner:
+
+```sh
+curl -fsSL https://yeet.cx | sh
+yeet service apply -f https://github.com/yeet-src/bomtastic/releases/latest/download/bomtastic.tar.gz
+```
+
+Run either line again to move to a newer release; `apply` rolls the
+change out in place. `yeet login` signs a host in to yeet.cx for the
+analyst tab; skip it and everything else still works.
+
+Package ownership comes from `rpm` or `dpkg`, whichever the host has;
+advisories from `dnf updateinfo` on the RPM family and from
+[OSV](https://osv.dev) elsewhere.
 
 | page       | what                                                                                       |
 | ---------- | ------------------------------------------------------------------------------------------ |
@@ -94,7 +117,8 @@ app/lib/analyst.js         "use yeet": the yeet:ai tool loop, streamed to the pa
 app/lib/trace.js           "use yeet": exec and TCP-connect tracepoints, attached only while a trace runs
 app/lib/fleet.js           "use server": walks the hub gateway's manifest and calls latest() on every node
 bpf/*.bpf.c                the two tracepoint programs, linked into bin/app.bpf.o by make
-services/                  the yeet service definition (conf.js) and deploy.sh
+service.toml               the yeet service: the isolate and its gateway
+bin/bomtastic.mjs          the launcher: fetch the pack, apply it, mount peers, serve the pages
 ```
 
 ### The kernel side
@@ -129,7 +153,7 @@ The yeet isolate has no `fetch`, no filesystem and no `exec`; its globals are `g
 
 ## Fleet: many machines, one page
 
-Every machine runs the app the same way as a `yeet service`; what differs is who dials whom.
+Every machine runs the same service; what differs is who dials whom.
 
 ```
 browser ──▶ yeetkit hub (Node) ──▶ gateway :3450 ──/app──▶ isolate          machine A (hub)
@@ -137,26 +161,41 @@ browser ──▶ yeetkit hub (Node) ──▶ gateway :3450 ──/app──▶
 ```
 
 ```sh
-npm run build
-services/deploy.sh node                               # on every machine
-services/deploy.sh hub 10.0.0.2:3450 10.0.0.3:3450    # on the one you look at
-node node_modules/.bin/yeetkit start --isolate ws://127.0.0.1:3450/app
+yeet service apply -f https://github.com/yeet-src/bomtastic/releases/latest/download/bomtastic.tar.gz   # on every machine
+npx -y github:yeet-src/bomtastic --peer 10.0.0.2:3450 --peer 10.0.0.3:3450                                # on the one you look at
 ```
 
-The hub's gateway has one proxy route per peer and publishes `/.well-known/yeet/manifest.json`, which re-roots each peer's routes under `/nodes/<host>`. `/fleet` walks that manifest, dials each `/app` and makes the same `latest()` call the hub makes to its own isolate — two gateway hops, about half a second. Rows land as each node answers; a dead node turns unreachable after 20 s without holding the others, and one whose upstream is down is still listed, from `yeet service export`. Adding a machine is `deploy.sh node` there and one more `host:port` on the hub.
+A peer is a proxy route on the hub's gateway, `/nodes/<host>` with the
+dots as dashes, which the launcher mounts for each `--peer`; by hand it
+is `yeet service mount bomtastic/gateway -L /nodes/10-0-0-2 -U ws://10.0.0.2:3450/`.
 
-`deploy.sh` removes and re-imports the service, because the daemon reads a unit's script once, at import: a rebuild is not live until the service is imported again. `BOM_GATEWAY`, `BOM_NODE_PORT` and `BOM_SERVICE` in Node's environment change the defaults (`127.0.0.1:3450`, `3100`, `bom-hub`).
+The hub's gateway has one proxy route per peer and publishes `/.well-known/yeet/manifest.json`, which re-roots each peer's routes under `/nodes/<host>`. `/fleet` walks that manifest, dials each `/app` and makes the same `latest()` call the hub makes to its own isolate — two gateway hops, about half a second. Rows land as each node answers; a dead node turns unreachable after 20 s without holding the others, and one whose upstream is down is still listed, from `yeet service export`. Adding a machine is the `apply` line there and one more `--peer` here.
+
+The launcher takes `--port` for the pages, `--service-port` for the gateway, `--release` for another pack (a URL or a local `.tar.gz`) and `--no-pages` to apply and mount only; it sets `BOM_GATEWAY`, `BOM_NODE_PORT` and `BOM_SERVICE` for the hub to match.
 
 ## Building from source
 
 ```sh
-npm run build    # bundle the scan worker, compile bpf/*.bpf.c, build isolate + node + browser bundles into dist/
-npm run dev      # the same, with reload, at :3100
-npm start        # serve dist/ (spawns its own isolate, or --isolate ws://… to dial a service)
-make bpf         # just the BPF object, bin/app.bpf.o
+git clone https://github.com/yeet-src/bomtastic && cd bomtastic
+npm install                       # Node 20+; pulls yeetkit from GitHub
+npm run dev                       # the pages at :3100, with reload, spawning their own isolate
+npm run build                     # bundle the scan worker, compile bpf/*.bpf.c, build isolate + node + browser bundles into dist/
+services/deploy.sh [peer:3450 ...]   # your build as the service: `yeet service apply -f service.toml`, plus a mount per peer
+npm start -- --isolate ws://127.0.0.1:3450/app   # the pages against it
+make pack                         # bomtastic.tar.gz, what a release carries
+node bin/bomtastic.mjs --release ./bomtastic.tar.gz   # the hub install, against your own pack
+make bpf                          # just the BPF object, bin/app.bpf.o
 ```
 
-`make` uses the pinned static toolchain resolved by `build/toolchain.mk` (clang, bpftool, veristat), fetched once into a per-machine cache; no system C or BPF toolchain is needed. The CO-RE header `bpf/include/vmlinux.h`, `bin/` and `public/scan-worker.js` are build artifacts.
+`service.toml` is the service: the isolate `dist/server.js`, lazy, and
+a gateway on `:3450` serving its tty at `/app`. The daemon copies the
+code in at apply, so a rebuild is live once `apply` runs again. `make`
+uses the pinned static toolchain resolved by `build/toolchain.mk`
+(clang, bpftool, veristat), fetched once into a per-machine cache; no
+system C or BPF toolchain is needed. The CO-RE header
+`bpf/include/vmlinux.h`, `bin/`, `dist/` and `public/scan-worker.js`
+are build artifacts. A tag `v*` runs `.github/workflows/release.yml`,
+which builds, packs and publishes `bomtastic.tar.gz` on the release.
 
 ## Testing across kernels
 
@@ -167,7 +206,7 @@ make bpf         # just the BPF object, bin/app.bpf.o
 > [!IMPORTANT]
 > Linux x86_64 or aarch64 with **BTF** (`CONFIG_DEBUG_INFO_BTF=y`) — needed to generate `vmlinux.h` for the tracepoint programs. Default on current Arch, Fedora, Ubuntu and Debian 12+. CO-RE means no per-kernel recompile.
 >
-> **yeet 0.23.0 or newer** (`Worker`, `yeet service`, `yeet:sym`), Node 20+, and `rpm` or `dpkg` for package ownership — on any other package manager, files simply show as unpackaged.
+> **yeet 0.25.0 or newer** (`Worker`, `yeet service apply`, `yeet:sym`), Node 20+, and `rpm` or `dpkg` for package ownership — on any other package manager, files simply show as unpackaged.
 
 ## Honest caveats
 
