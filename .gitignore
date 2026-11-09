@@ -12,3 +12,7 @@ bpf/include/vmlinux.h
 
 # bundled scan worker (npm run worker)
 public/scan-worker.js
+
+# make pack staging and output
+.pack/
+bomtastic.tar.gz

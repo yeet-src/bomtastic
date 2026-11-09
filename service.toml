@@ -1,0 +1,27 @@
+alias = "bomtastic"
+restart = "always"
+enabled = true
+working-directory = "."
+
+# The scanner: the yeetkit isolate, built by `npm run build`. Lazy, so it
+# comes up when the hub (or a fleet peer) first dials /app.
+[units.app]
+isolate = "./dist/server.js"
+lazy = true
+
+# The gateway. The pages are Node's: `yeetkit start --isolate
+# ws://127.0.0.1:3450/app` dials this instead of spawning an isolate.
+# A hub adds one proxy route per peer:
+#   yeet service mount bomtastic/gateway -L /nodes/<host> -U ws://<host>:3450/
+[units.gateway]
+web-server = "ws://0.0.0.0:3450/"
+
+[units.gateway.routes."/app"]
+target = "app"
+portal = "tty"
+description = "bomtastic isolate"
+
+[units.gateway.routes."/console"]
+target = "app"
+portal = "console"
+description = "bomtastic isolate logs"

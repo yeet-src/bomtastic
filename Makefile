@@ -17,3 +17,15 @@
 
 include build/toolchain.mk
 include build/bpf.mk
+
+# The release pack: service.toml plus the build, as one archive
+# `yeet service apply -f <url>` takes. `npm run build` first.
+pack:
+	@test -f dist/server.js || { echo "build first: npm run build"; exit 1; }
+	rm -rf .pack && mkdir .pack
+	cp -r service.toml yeetkit.config.js dist .pack/
+	tar czf bomtastic.tar.gz -C .pack .
+	rm -rf .pack
+	@ls -l bomtastic.tar.gz
+
+.PHONY: pack

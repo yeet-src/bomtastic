@@ -1,18 +1,18 @@
 #!/usr/bin/env bash
 # (Re)deploy the bomtastic service on this machine after a build.
 #
-#   services/deploy.sh node
-#   services/deploy.sh hub 10.0.0.2:3450 [more host:port ...]
+#   services/deploy.sh                                  # a node
+#   services/deploy.sh 10.0.0.2:3450 [more host:port ...]   # a hub: a node plus a proxy route per peer
 #
-# The daemon reads a unit's script once, when the service is imported,
-# so a rebuild is not live until the service is imported again. This
-# removes and re-imports; the hub that dials /app reconnects on its own.
+# `apply` rolls a rebuilt dist/ out in place; the hub that dials /app
+# reconnects on its own. Peers are routes mounted on the gateway, so a
+# hub is the same service with more routes.
 set -euo pipefail
 cd "$(dirname "$0")/.."
-role=${1:-node}; shift || true
-args=(--role "$role" --dir "$PWD")
-for n in "$@"; do args+=(--node "$n"); done
-yeet service remove -f "bom-$role" >/dev/null 2>&1 || true
-yeet run -T -q services/conf.js -- "${args[@]}" | yeet service import - -j -q
-yeet service start "bom-$role" | tail -1
-yeet service tree "bom-$role"
+[[ -f dist/server.js ]] || { echo "build first: npm run build" >&2; exit 1; }
+yeet service apply -y -f service.toml | tail -1
+for node in "$@"; do
+  host=${node%%:*}; host=${host//./-}
+  yeet service mount bomtastic/gateway -L "/nodes/$host" -U "ws://$node/" -d "bomtastic on $node" 2>/dev/null || true
+done
+yeet service tree bomtastic
