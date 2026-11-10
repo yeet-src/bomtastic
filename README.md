@@ -44,7 +44,7 @@ No Node needed, only the scanner:
 
 ```sh
 curl -fsSL https://yeet.cx | sh
-yeet service apply -f https://github.com/yeet-src/bomtastic/releases/latest/download/bomtastic.tar.gz
+yeet service apply -f gh:yeet-src/bomtastic
 ```
 
 Run either line again to move to a newer release; `apply` rolls the
@@ -161,8 +161,8 @@ browser ──▶ yeetkit hub (Node) ──▶ gateway :3450 ──/app──▶
 ```
 
 ```sh
-yeet service apply -f https://github.com/yeet-src/bomtastic/releases/latest/download/bomtastic.tar.gz   # on every machine
-npx -y github:yeet-src/bomtastic --peer 10.0.0.2:3450 --peer 10.0.0.3:3450                                # on the one you look at
+yeet service apply -f gh:yeet-src/bomtastic                                   # on every machine
+npx -y github:yeet-src/bomtastic --peer 10.0.0.2:3450 --peer 10.0.0.3:3450   # on the one you look at
 ```
 
 A peer is a proxy route on the hub's gateway, `/nodes/<host>` with the
